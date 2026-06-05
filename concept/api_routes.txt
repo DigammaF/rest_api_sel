@@ -48,5 +48,10 @@ SEL/
 			DELETE*|[membre:{proposeur}]: Supprime la proposition
 			PUT*|[membre:{proposeur}]: Met à jour la proposition
 
-		POST*|[membre:]
+		GET: Lister les propositions selon certains critères
+		POST*|[membre:{n}]: Créer une proposition en temps que membre n
+
+	services/
+
+	transactions/
 
