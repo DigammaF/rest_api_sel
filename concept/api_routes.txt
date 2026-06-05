@@ -1,0 +1,52 @@
+
+*: nécessite une autorisation délivrée par l'exploitant du système
+[n]: nécessite une autorisation par l'entité caractŕisée par n
+
+|, &: combine les nécessité d'autorisation
+
+SEL/
+	auth/
+		admin/
+			GET: Etablit l'identité de l'entité en temps qu'exploitant du système (*)
+
+		membre/
+			{id}/
+				GET: Etablit l'identité de l'entité en temps que possédant des droits sur le membre {id} ([membre:{id}])
+
+	membres/
+		{id}/
+			GET: Renvoie les données propres au membre, la liste des compétences et des offres
+			DELETE*|[membre:{id}]: Supprime le membre (champs mis à NULL et mise à jour du status)
+			PUT*|[membre:{id}]: Met à jour les informations relatives au membre
+
+		GET: Lister les membres selon  certains critères
+		POST*: Créer un membre
+
+	categories/
+		{id}/
+			GET: Renvoie les informations relatives à cette catégorie, peut-être des statistiques ?
+			DELETE*: Supprime la catégorie
+			PUT*: Met à jour les informations relatives à la catégorie
+
+		POST*: Créer une catégorie
+
+	competences/
+		{id}/
+			GET: Renvoie les informations relatives à cette compétence, peut-être des statistiques ?
+			DELETE*: Supprime la compétence
+			PUT*: Met à jour les informations relatives à la compétence
+
+		POST*: Créer une catégorie
+
+	cotisations/
+		GET: Consulter le coût de cotisation de l´année en cours
+		POST: Payer une cotisation pour un membre
+
+	propositions/
+		{id}/
+			GET: Consulter les informations relatives à cette proposition
+			DELETE*|[membre:{proposeur}]: Supprime la proposition
+			PUT*|[membre:{proposeur}]: Met à jour la proposition
+
+		POST*|[membre:]
+
