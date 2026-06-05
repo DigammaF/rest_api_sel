@@ -1,5 +1,5 @@
 
-*: nécessite une autorisation délivrée par l'exploitant du système
+*: nécessite une autorisation de niveau supérieur
 [n]: nécessite une autorisation par l'entité caractŕisée par n
 
 |, &: combine les nécessité d'autorisation
@@ -7,7 +7,8 @@
 SEL/
 	auth/
 		admin/
-			GET: Etablit l'identité de l'entité en temps qu'exploitant du système (*)
+			{id}/
+				GET: Etablit l'identité de l'entité en temps qu'utilisateur possédant une autorisation de niveau supérieur
 
 		membre/
 			{id}/
