@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: API Système d'Échange Local (SEL)
+  description: |
+    Spécifications de l'API SEL incluant la gestion des droits :
+    - `*` : Nécessite une autorisation de niveau supérieur (Admin).
+    - `[n]` : Nécessite une autorisation par l'entité caractérisée par n.
+    - `|`, `&` : Combinaisons de nécessités d'autorisation.
+  version: 1.0.0
+
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: #A changer avec URL de token
+          scopes:
+            api.read: Read API
+            api.write: Write API
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Serveur de développement local
+
+paths:
+  # --- AUTHENTIFICATION --- 
+  /auth/{id}:
+    get:
+      summary: Établit l'identité pour un membre/admin [membre:id]
+      description: Établit l'identité de l'entité {id}.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Identité établie avec succès.
+        '401':
+          description: Non authentifié.
+
+  # --- MEMBRES ---
+  /membres:
+    get:
+      summary: Lister les membres selon certains critères
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [cotisant, non-cotisant, supprime]
+        - name: nom
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des membres correspondants.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Membre'
+    post:
+      summary: Créer un membre (*)
+      description: Nécessite une autorisation de niveau supérieur.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreInput'
+      responses:
+        '201':
+          description: Membre créé avec succès.
+
+  /membres/{id}:
+    get:
+      summary: Récupérer les données d'un membre
+      description: Renvoie les données propres au membre, la liste de ses compétences et de ses offres.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Profil complet du membre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembreDetail'
+        '404':
+          description: Membre non trouvé.
+    put:
+      summary: Modifier un membre (* | [membre:id])
+      description: Met à jour les informations relatives au membre. Nécessite d'être admin ou le membre lui-même.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreInput'
+      responses:
+        '200':
+          description: Membre mis à jour.
+    delete:
+      summary: Supprimer un membre (* | [membre:id])
+      description: Supprime le membre (champs mis à NULL et mise à jour du statut à 'supprime').
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Membre désactivé/anonymisé avec succès.
+
+  # --- CATEGORIES ---
+  /categories:
+    post:
+      summary: Créer une catégorie (*)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorieInput'
+      responses:
+        '201':
+          description: Catégorie créée.
+
+  /categories/{id}:
+    get:
+      summary: Infos et statistiques d'une catégorie
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200
