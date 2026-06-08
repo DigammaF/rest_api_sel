@@ -52,7 +52,8 @@ SEL/
 		GET: Lister les propositions selon certains critères
 		POST*|[membre:{n}]: Créer une proposition en temps que membre n
 
-	services/
-
 	transactions/
+		{id}/
+			GET: Consulter les informations relatives à cette transaction
+			PUT*|[membre:{proposeur|beneficiaire}]: Met à jour la transaction
 
