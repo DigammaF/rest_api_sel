@@ -154,4 +154,4 @@ paths:
           schema:
             type: integer
       responses:
-        '200
+        '200'
