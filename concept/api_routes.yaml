@@ -1,157 +1,1335 @@
 openapi: 3.0.3
 info:
   title: API Système d'Échange Local (SEL)
-  description: |
-    Spécifications de l'API SEL incluant la gestion des droits :
-    - `*` : Nécessite une autorisation de niveau supérieur (Admin).
-    - `[n]` : Nécessite une autorisation par l'entité caractérisée par n.
-    - `|`, `&` : Combinaisons de nécessités d'autorisation.
+  description:
+    API REST pour le Système d'Échange Local du Parc Naturel du Morvan.
+    Permet la gestion des membres, compétences, propositions et transactions de services en heures.
   version: 1.0.0
 
-
-components:
-  securitySchemes:
-    OAuth2:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: #A changer avec URL de token
-          scopes:
-            api.read: Read API
-            api.write: Write API
-
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Serveur de développement local
+  - url: http://localhost:8888/api/v1
+    description: Serveur de développement
+
+tags:
+  - name: Auth
+    description: Authentification
+  - name: Membres
+    description: Gestion des membres
+  - name: Cotisations
+    description: Gestion des cotisations annuelles
+  - name: Categories
+    description: Gestion des catégories de compétences (admin)
+  - name: Competences
+    description: Gestion des compétences (admin)
+  - name: MembreCompetences
+    description: Compétences déclarées par les membres
+  - name: Propositions
+    description: Propositions de services publiées par les membres
+  - name: Transactions
+    description: Transactions de services entre membres
 
 paths:
   # --- AUTHENTIFICATION --- 
-  /auth/{id}:
-    get:
-      summary: Établit l'identité pour un membre/admin [membre:id]
-      description: Établit l'identité de l'entité {id}.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Connexion d'un membre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ code_membre, password ]
+              properties:
+                code_membre:
+                  type: string
+                  example: "422324"
+                password:
+                  type: string
+                  format: password
+                  example: monMotDePasse!
       responses:
         '200':
-          description: Identité établie avec succès.
+          description: Authentification réussie, retourne un token JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
         '401':
-          description: Non authentifié.
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [ Auth ]
+      summary: Déconnexion du membre courant
+      security:
+        - OIDC: [ ]
+      responses:
+        '204':
+          description: Déconnexion réussie
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # --- MEMBRES ---
   /membres:
     get:
-      summary: Lister les membres selon certains critères
+      tags: [ Membres ]
+      summary: Lister les membres (admin)
+      security:
+        - OIDC: [ ]
       parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
         - name: status
           in: query
-          required: false
           schema:
             type: string
-            enum: [cotisant, non-cotisant, supprime]
-        - name: nom
-          in: query
-          required: false
-          schema:
-            type: string
+            enum: [ cotisant, non-cotisant ]
+          description: Filtrer par statut de cotisation
       responses:
         '200':
-          description: Liste des membres correspondants.
+          description: Liste paginée des membres
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginationMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MembreResume'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [ Membres ]
+      summary: Créer un nouveau membre (inscription)
+      security:
+        - OIDC: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreCreate'
+      responses:
+        '201':
+          description: Membre créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+        '400':
+          $ref: '#/components/schemas/Error'
+        '409':
+          description: Email déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/BadRequest'
+
+  /membres/{code}:
+    parameters:
+      - $ref: '#/components/parameters/CodeMembreParam'
+
+    get:
+      tags: [ Membres ]
+      summary: Obtenir un membre par son code
+      security:
+        - OIDC: [ ]
+      responses:
+        '200':
+          description: Détail du membre
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [ Membres ]
+      summary: Mettre à jour un membre (lui-même ou admin)
+      security:
+        - OIDC: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreUpdate'
+      responses:
+        '200':
+          description: Membre mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membre'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [ Membres ]
+      summary: Supprimer (soft delete) un membre (admin)
+      security:
+        - OIDC: [ ]
+      responses:
+        '204':
+          description: Membre supprimé (marqué is_deleted)
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /membres/{code}/solde:
+    parameters:
+      - $ref: '#/components/parameters/CodeMembreParam'
+    get:
+      tags: [ Membres ]
+      summary: Consulter le solde d'heures d'un membre
+      security:
+        - OIDC: [ ]
+      responses:
+        '200':
+          description: Solde d'heures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  solde_heure:
+                    type: integer
+                    example: 14
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── COTISATIONS ───────────────────────────
+  /membres/{code}/cotisations:
+    parameters:
+      - $ref: '#/components/parameters/CodeMembreParam'
+
+    get:
+      tags: [ Cotisations ]
+      summary: Lister les cotisations d'un membre
+      security:
+        - OIDC: [ ]
+      responses:
+        '200':
+          description: Liste des cotisations
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Membre'
+                  $ref: '#/components/schemas/Cotisation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
     post:
-      summary: Créer un membre (*)
-      description: Nécessite une autorisation de niveau supérieur.
+      tags: [ Cotisations ]
+      summary: Enregistrer une cotisation pour un membre (admin)
+      security:
+        - OIDC: [ ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembreInput'
+              $ref: '#/components/schemas/CotisationCreate'
       responses:
         '201':
-          description: Membre créé avec succès.
-
-  /membres/{id}:
-    get:
-      summary: Récupérer les données d'un membre
-      description: Renvoie les données propres au membre, la liste de ses compétences et de ses offres.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Profil complet du membre.
+          description: Cotisation enregistrée
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MembreDetail'
+                $ref: '#/components/schemas/Cotisation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: Membre non trouvé.
-    put:
-      summary: Modifier un membre (* | [membre:id])
-      description: Met à jour les informations relatives au membre. Nécessite d'être admin ou le membre lui-même.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MembreInput'
-      responses:
-        '200':
-          description: Membre mis à jour.
-    delete:
-      summary: Supprimer un membre (* | [membre:id])
-      description: Supprime le membre (champs mis à NULL et mise à jour du statut à 'supprime').
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Membre désactivé/anonymisé avec succès.
+          $ref: '#/components/responses/NotFound'
 
   # --- CATEGORIES ---
   /categories:
+    get:
+      tags: [ Categories ]
+      summary: Lister toutes les catégories de compétences
+      security:
+        - OIDC: [ ]
+      responses:
+        '200':
+          description: Liste des catégories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categorie'
+
     post:
-      summary: Créer une catégorie (*)
+      tags: [ Categories ]
+      summary: Créer une catégorie (admin)
+      security:
+        - OIDC: [ ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategorieInput'
+              $ref: '#/components/schemas/CategorieCreate'
       responses:
         '201':
-          description: Catégorie créée.
+          description: Catégorie créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
 
   /categories/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+
     get:
-      summary: Infos et statistiques d'une catégorie
+      tags: [ Categories ]
+      summary: Obtenir une catégorie par son id
+      security:
+        - OIDC: [ ]
+      responses:
+        '200':
+          description: Détail de la catégorie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [ Categories ]
+      summary: Modifier une catégorie (admin)
+      security:
+        - OIDC: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorieCreate'
+      responses:
+        '200':
+          description: Catégorie mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categorie'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [ Categories ]
+      summary: Supprimer une catégorie (admin)
+      security:
+        - OIDC: [ ]
+      responses:
+        '204':
+          description: Catégorie supprimée
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Catégorie utilisée par des compétences existantes
+
+  # ── COMPETENCES ───────────────────────────
+  /competences:
+    get:
+      tags: [Competences]
+      summary: Lister toutes les compétences
+      security:
+        - OIDC: []
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: id_categorie
+          in: query
           schema:
             type: integer
+          description: Filtrer par catégorie
       responses:
-        '200
+        '200':
+          description: Liste des compétences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Competence'
+
+    post:
+      tags: [Competences]
+      summary: Créer une compétence (admin)
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetenceCreate'
+      responses:
+        '201':
+          description: Compétence créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+
+  /competences/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    put:
+      tags: [Competences]
+      summary: Modifier une compétence (admin)
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetenceCreate'
+      responses:
+        '200':
+          description: Compétence mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competence'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Competences]
+      summary: Supprimer une compétence (admin)
+      security:
+        - OIDC: []
+      responses:
+        '204':
+          description: Compétence supprimée
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── MEMBRE-COMPETENCES ────────────────────
+  /membres/{code}/competences:
+    parameters:
+      - $ref: '#/components/parameters/CodeMembreParam'
+
+    get:
+      tags: [MembreCompetences]
+      summary: Lister les compétences déclarées par un membre
+      security:
+        - OIDC: []
+      responses:
+        '200':
+          description: Compétences du membre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MembreCompetence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [MembreCompetences]
+      summary: Ajouter une compétence à un membre
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembreCompetenceCreate'
+      responses:
+        '201':
+          description: Compétence ajoutée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembreCompetence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+
+  /membres/{code}/competences/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CodeMembreParam'
+      - $ref: '#/components/parameters/IdParam'
+
+    get:
+      tags: [MembreCompetences]
+      summary: Obtenir une déclaration de compétence d'un membre
+      security:
+        - OIDC: []
+      responses:
+        '200':
+          description: Détail de la compétence du membre
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembreCompetence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [MembreCompetences]
+      summary: Modifier la description d'une compétence déclarée
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description]
+              properties:
+                description:
+                  type: string
+                  example: "10 ans de pratique, niveau intermédiaire"
+      responses:
+        '200':
+          description: Compétence mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembreCompetence'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [MembreCompetences]
+      summary: Retirer une compétence déclarée
+      security:
+        - OIDC: []
+      responses:
+        '204':
+          description: Compétence retirée
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── PROPOSITIONS ──────────────────────────
+  /propositions:
+    get:
+      tags: [Propositions]
+      summary: Lister les propositions de services disponibles
+      security:
+        - OIDC: []
+      parameters:
+        - name: id_categorie
+          in: query
+          schema:
+            type: integer
+          description: Filtrer par catégorie de compétence
+        - name: id_competence
+          in: query
+          schema:
+            type: integer
+          description: Filtrer par compétence
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Propositions disponibles à partir de cette date
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Propositions disponibles avant cette date
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Liste des propositions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginationMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Proposition'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Propositions]
+      summary: Publier une nouvelle proposition de service
+      description: Le membre doit être cotisant et avoir déclaré la compétence correspondante.
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropositionCreate'
+      responses:
+        '201':
+          description: Proposition créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+
+  /propositions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+
+    get:
+      tags: [Propositions]
+      summary: Obtenir une proposition par son id
+      security:
+        - OIDC: []
+      responses:
+        '200':
+          description: Détail de la proposition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Propositions]
+      summary: Modifier une proposition (auteur ou admin)
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropositionUpdate'
+      responses:
+        '200':
+          description: Proposition mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposition'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Propositions]
+      summary: Supprimer une proposition (auteur ou admin)
+      security:
+        - OIDC: []
+      responses:
+        '204':
+          description: Proposition supprimée
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── TRANSACTIONS ──────────────────────────
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: Lister les transactions (admin, ou filtrées par membre)
+      security:
+        - OIDC: []
+      parameters:
+        - name: membre
+          in: query
+          schema:
+            type: integer
+          description: Filtrer les transactions impliquant ce membre (acteur ou bénéficiaire)
+        - name: etat
+          in: query
+          schema:
+            type: string
+            enum: [prevu, en_cours, terminee]
+          description: Filtrer par état
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Liste des transactions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginationMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Transactions]
+      summary: Créer une transaction (par l'acteur qui fournit le service)
+      description: |
+        C'est le membre qui fournit le service qui crée la transaction.
+        Si une proposition est fournie, l'acteur est automatiquement déduit via le trigger.
+        Les deux membres doivent être cotisants.
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionCreate'
+      responses:
+        '201':
+          description: Transaction créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+
+  /transactions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+
+    get:
+      tags: [Transactions]
+      summary: Obtenir une transaction par son id
+      security:
+        - OIDC: []
+      responses:
+        '200':
+          description: Détail de la transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Transactions]
+      summary: Mettre à jour une transaction (état, durée effective…)
+      description: |
+        La validation (passage à l'état "terminee") est réservée au bénéficiaire.
+        C'est lors de cette validation que les soldes d'heures sont ajustés.
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionUpdate'
+      responses:
+        '200':
+          description: Transaction mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /transactions/{id}/valider:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    patch:
+      tags: [Transactions]
+      summary: Valider une transaction terminée (bénéficiaire uniquement)
+      description: |
+        Marque la transaction comme "terminee" et déclenche les débits/crédits d'heures
+        sur les comptes des deux membres concernés.
+      security:
+        - OIDC: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nb_heures]
+              properties:
+                nb_heures:
+                  type: integer
+                  minimum: 1
+                  example: 2
+                  description: Nombre d'heures effectivement réalisées (entier supérieur)
+      responses:
+        '200':
+          description: Transaction validée, soldes mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Transaction déjà validée
+          
+components:
+  securitySchemes:
+    OIDC:
+      type: OIDC
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/realms/sel/protocol/openid-connect/token
+          scopes:
+            api.read: Read API
+            api.write: Write API
+
+  parameters:
+    CodeMembreParam:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Code identifiant du membre
+
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Identifiant de la ressource
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Numéro de page
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Nombre de résultats par page
+
+  # ── RESPONSES ─────────────────────────────
+  responses:
+    Unauthorized:
+      description: Token manquant ou invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Accès interdit (droits insuffisants ou membre non cotisant)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedError'
+
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+
+    BadRequest:
+      description: Données invalides
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
+  # ── SCHEMAS ───────────────────────────────
+  schemas:
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Token manquant ou invalide
+    
+    UnauthorizedError:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Accès interdit
+          
+    NotFoundError:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 404
+          message:
+            type: string
+            example: Ressource introuvable
+
+    BadRequestError:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 409
+          message:
+            type: string
+            example: Données invalides
+
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        profil:
+          type: string
+          enum: [ admin, utilisateur ]
+        code_membre:
+          type: integer
+          example: 42
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 150
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+
+    # ── Membre ──
+    MembreResume:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1
+        nom:
+          type: string
+          example: Dupont
+        prenom:
+          type: string
+          example: Marguerite
+        status:
+          type: string
+          enum: [ cotisant, non-cotisant ]
+        solde_heure:
+          type: integer
+          example: 12
+
+    Membre:
+      allOf:
+        - $ref: '#/components/schemas/MembreResume'
+        - type: object
+          properties:
+            adresse:
+              type: string
+              example: "12 rue des Champs, 58000 Nevers"
+            date_de_naissance:
+              type: string
+              format: date
+              example: "1944-03-15"
+            adresse_mail:
+              type: string
+              format: email
+              example: marguerite@email.fr
+            num_tel:
+              type: integer
+              example: 612345678
+            espace_de_donnees:
+              type: string
+              example: "J'adore la cuisine mijotée et les longues promenades en forêt."
+            profil:
+              type: string
+              enum: [ admin, utilisateur ]
+
+    MembreCreate:
+      type: object
+      required:
+        - nom
+        - prenom
+        - adresse
+        - date_de_naissance
+        - adresse_mail
+        - num_tel
+        - password
+      properties:
+        nom:
+          type: string
+          example: Dupont
+        prenom:
+          type: string
+          example: Marguerite
+        adresse:
+          type: string
+          example: "12 rue des Champs, 58000 Nevers"
+        date_de_naissance:
+          type: string
+          format: date
+          example: "1944-03-15"
+        adresse_mail:
+          type: string
+          format: email
+          example: marguerite@email.fr
+        num_tel:
+          type: integer
+          example: 612345678
+        espace_de_donnees:
+          type: string
+          example: "Passionnée de cuisine traditionnelle."
+        password:
+          type: string
+          format: password
+
+    MembreUpdate:
+      type: object
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        adresse:
+          type: string
+        adresse_mail:
+          type: string
+          format: email
+        num_tel:
+          type: integer
+        espace_de_donnees:
+          type: string
+        password:
+          type: string
+          format: password
+
+    # ── Cotisation ──
+    Cotisation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        membre:
+          type: integer
+          example: 1
+        annee:
+          type: integer
+          example: 2025
+        prix:
+          type: number
+          format: decimal
+          example: 10.00
+        date:
+          type: string
+          format: date
+          example: "2025-01-15"
+
+    CotisationCreate:
+      type: object
+      required: [ annee, prix, date ]
+      properties:
+        annee:
+          type: integer
+          example: 2025
+        prix:
+          type: number
+          format: decimal
+          example: 10.00
+        date:
+          type: string
+          format: date
+          example: "2025-01-15"
+
+    # ── Categorie ──
+    Categorie:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        description:
+          type: string
+          example: Bricolage
+
+    CategorieCreate:
+      type: object
+      required: [ description ]
+      properties:
+        description:
+          type: string
+          example: Bricolage
+
+    # ── Competence ──
+    Competence:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        description:
+          type: string
+          example: Pose de placo
+        id_categorie:
+          type: integer
+          example: 1
+        categorie:
+          $ref: '#/components/schemas/Categorie'
+
+    CompetenceCreate:
+      type: object
+      required: [ description, id_categorie ]
+      properties:
+        description:
+          type: string
+          example: Pose de placo
+        id_categorie:
+          type: integer
+          example: 1
+
+    # ── MembreCompetence ──
+    MembreCompetence:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        membre:
+          type: integer
+          example: 1
+        competence:
+          $ref: '#/components/schemas/Competence'
+        description:
+          type: string
+          example: "15 ans d'expérience en plaquisterie, chantiers résidentiels."
+
+    MembreCompetenceCreate:
+      type: object
+      required: [ competence ]
+      properties:
+        competence:
+          type: integer
+          example: 5
+          description: Id de la compétence déclarée
+        description:
+          type: string
+          example: "15 ans d'expérience en plaquisterie."
+
+    # ── Proposition ──
+    Proposition:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 7
+        membre_competence:
+          $ref: '#/components/schemas/MembreCompetence'
+        date_debut:
+          type: string
+          format: date
+          example: "2025-11-15"
+        date_fin:
+          type: string
+          format: date
+          example: "2025-11-15"
+        description:
+          type: string
+          example: "2 parts de carbonades flamandes à emporter le 15/11"
+        tarif:
+          type: integer
+          example: 1
+          description: Tarif en heures par unité (si service offline), sinon 0 (temps réel)
+
+    PropositionCreate:
+      type: object
+      required: [ membre_competence, date_debut, date_fin, description, tarif ]
+      properties:
+        membre_competence:
+          type: integer
+          example: 3
+          description: Id de la déclaration de compétence du membre
+        date_debut:
+          type: string
+          format: date
+          example: "2025-11-15"
+        date_fin:
+          type: string
+          format: date
+          example: "2025-11-15"
+        description:
+          type: string
+          example: "2 parts de carbonades flamandes à emporter."
+        tarif:
+          type: integer
+          minimum: 0
+          example: 1
+
+    PropositionUpdate:
+      type: object
+      properties:
+        date_debut:
+          type: string
+          format: date
+        date_fin:
+          type: string
+          format: date
+        description:
+          type: string
+        tarif:
+          type: integer
+          minimum: 0
+
+    # ── Transaction ──
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        acteur:
+          $ref: '#/components/schemas/MembreCompetence'
+        beneficiaire:
+          $ref: '#/components/schemas/MembreResume'
+        proposition:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Proposition'
+        nb_heures:
+          type: integer
+          example: 2
+          description: Nombre d'heures effectivement réalisées (fixé à la fin)
+        duree_theorique:
+          type: integer
+          example: 2
+          description: Durée estimée à la création de la transaction
+        etat:
+          type: string
+          enum: [ prevu, en_cours, terminee ]
+          example: prevu
+        date_prevu:
+          type: string
+          format: date
+          example: "2025-11-15"
+        date_real:
+          type: string
+          format: date
+          example: "2025-11-15"
+
+    TransactionCreate:
+      type: object
+      required: [ acteur, beneficiaire, duree_theorique, date_prevu ]
+      properties:
+        acteur:
+          type: integer
+          example: 3
+          description: Id de la déclaration de compétence de l'acteur (ignoré si proposition fournie)
+        beneficiaire:
+          type: integer
+          example: 5
+          description: Code du membre bénéficiaire
+        proposition:
+          type: integer
+          nullable: true
+          example: 7
+          description: Id de la proposition (optionnel)
+        duree_theorique:
+          type: integer
+          minimum: 1
+          example: 2
+        date_prevu:
+          type: string
+          format: date
+          example: "2025-11-15"
+
+    TransactionUpdate:
+      type: object
+      properties:
+        etat:
+          type: string
+          enum: [ prevu, en_cours, terminee ]
+        nb_heures:
+          type: integer
+          minimum: 1
+        date_real:
+          type: string
+          format: date
+
