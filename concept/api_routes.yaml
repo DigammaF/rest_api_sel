@@ -64,7 +64,7 @@ paths:
       tags: [ Auth ]
       summary: Déconnexion du membre courant
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '204':
           description: Déconnexion réussie
@@ -77,7 +77,7 @@ paths:
       tags: [ Membres ]
       summary: Lister les membres (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -108,7 +108,7 @@ paths:
       tags: [ Membres ]
       summary: Créer un nouveau membre (inscription)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -139,7 +139,7 @@ paths:
       tags: [ Membres ]
       summary: Obtenir un membre par son code
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '200':
           description: Détail du membre
@@ -156,7 +156,7 @@ paths:
       tags: [ Membres ]
       summary: Mettre à jour un membre (lui-même ou admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -181,7 +181,7 @@ paths:
       tags: [ Membres ]
       summary: Supprimer (soft delete) un membre (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '204':
           description: Membre supprimé (marqué is_deleted)
@@ -197,7 +197,7 @@ paths:
       tags: [ Membres ]
       summary: Consulter le solde d'heures d'un membre
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '200':
           description: Solde d'heures
@@ -225,7 +225,7 @@ paths:
       tags: [ Cotisations ]
       summary: Lister les cotisations d'un membre
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '200':
           description: Liste des cotisations
@@ -244,7 +244,7 @@ paths:
       tags: [ Cotisations ]
       summary: Enregistrer une cotisation pour un membre (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -271,7 +271,7 @@ paths:
       tags: [ Categories ]
       summary: Lister toutes les catégories de compétences
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '200':
           description: Liste des catégories
@@ -286,7 +286,7 @@ paths:
       tags: [ Categories ]
       summary: Créer une catégorie (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -313,7 +313,7 @@ paths:
       tags: [ Categories ]
       summary: Obtenir une catégorie par son id
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '200':
           description: Détail de la catégorie
@@ -328,7 +328,7 @@ paths:
       tags: [ Categories ]
       summary: Modifier une catégorie (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -351,7 +351,7 @@ paths:
       tags: [ Categories ]
       summary: Supprimer une catégorie (admin)
       security:
-        - OIDC: [ ]
+      - cookieAuth: []
       responses:
         '204':
           description: Catégorie supprimée
@@ -368,7 +368,7 @@ paths:
       tags: [Competences]
       summary: Lister toutes les compétences
       security:
-        - OIDC: []
+      - cookieAuth: []
       parameters:
         - name: id_categorie
           in: query
@@ -389,7 +389,7 @@ paths:
       tags: [Competences]
       summary: Créer une compétence (admin)
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -415,7 +415,7 @@ paths:
       tags: [Competences]
       summary: Modifier une compétence (admin)
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -438,7 +438,7 @@ paths:
       tags: [Competences]
       summary: Supprimer une compétence (admin)
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '204':
           description: Compétence supprimée
@@ -456,7 +456,7 @@ paths:
       tags: [MembreCompetences]
       summary: Lister les compétences déclarées par un membre
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '200':
           description: Compétences du membre
@@ -473,7 +473,7 @@ paths:
       tags: [MembreCompetences]
       summary: Ajouter une compétence à un membre
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -501,7 +501,7 @@ paths:
       tags: [MembreCompetences]
       summary: Obtenir une déclaration de compétence d'un membre
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '200':
           description: Détail de la compétence du membre
@@ -516,7 +516,7 @@ paths:
       tags: [MembreCompetences]
       summary: Modifier la description d'une compétence déclarée
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -544,7 +544,7 @@ paths:
       tags: [MembreCompetences]
       summary: Retirer une compétence déclarée
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '204':
           description: Compétence retirée
@@ -559,7 +559,7 @@ paths:
       tags: [Propositions]
       summary: Lister les propositions de services disponibles
       security:
-        - OIDC: []
+      - cookieAuth: []
       parameters:
         - name: id_categorie
           in: query
@@ -607,7 +607,7 @@ paths:
       summary: Publier une nouvelle proposition de service
       description: Le membre doit être cotisant et avoir déclaré la compétence correspondante.
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -634,7 +634,7 @@ paths:
       tags: [Propositions]
       summary: Obtenir une proposition par son id
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '200':
           description: Détail de la proposition
@@ -649,7 +649,7 @@ paths:
       tags: [Propositions]
       summary: Modifier une proposition (auteur ou admin)
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -672,7 +672,7 @@ paths:
       tags: [Propositions]
       summary: Supprimer une proposition (auteur ou admin)
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '204':
           description: Proposition supprimée
@@ -687,7 +687,7 @@ paths:
       tags: [Transactions]
       summary: Lister les transactions (admin, ou filtrées par membre)
       security:
-        - OIDC: []
+      - cookieAuth: []
       parameters:
         - name: membre
           in: query
@@ -727,7 +727,7 @@ paths:
         Si une proposition est fournie, l'acteur est automatiquement déduit via le trigger.
         Les deux membres doivent être cotisants.
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -754,7 +754,7 @@ paths:
       tags: [Transactions]
       summary: Obtenir une transaction par son id
       security:
-        - OIDC: []
+      - cookieAuth: []
       responses:
         '200':
           description: Détail de la transaction
@@ -772,7 +772,7 @@ paths:
         La validation (passage à l'état "terminee") est réservée au bénéficiaire.
         C'est lors de cette validation que les soldes d'heures sont ajustés.
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -803,7 +803,7 @@ paths:
         Marque la transaction comme "terminee" et déclenche les débits/crédits d'heures
         sur les comptes des deux membres concernés.
       security:
-        - OIDC: []
+      - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -835,14 +835,10 @@ paths:
           
 components:
   securitySchemes:
-    OIDC:
-      type: OIDC
-      flows:
-        clientCredentials:
-          tokenUrl: https://auth.example.com/realms/sel/protocol/openid-connect/token
-          scopes:
-            api.read: Read API
-            api.write: Write API
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: connect.sid
 
   parameters:
     CodeMembreParam:
