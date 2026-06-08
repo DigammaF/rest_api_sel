@@ -1,0 +1,11 @@
+openapi: '3.0.3'
+info:
+  title: title
+  version: '1.0.0'
+  description: |
+    description
+
+defaultContentType: application/json
+
+paths:
+  /SEL:
