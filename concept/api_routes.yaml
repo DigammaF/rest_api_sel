@@ -75,7 +75,7 @@ paths:
   /membres:
     get:
       tags: [ Membres ]
-      summary: Lister les membres (admin)
+      summary: Lister les membres
       security:
       - cookieAuth: []
       parameters:
