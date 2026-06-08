@@ -101,8 +101,6 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/MembreResume'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
     post:
       tags: [ Membres ]
