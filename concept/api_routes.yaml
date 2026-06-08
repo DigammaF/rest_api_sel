@@ -51,11 +51,11 @@ paths:
                   example: monMotDePasse!
       responses:
         '200':
-          description: Authentification réussie, retourne un token JWT
+          description: Authentification réussie, retourne un cookie
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenResponse'
+                $ref: '#/components/schemas/AuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -102,7 +102,7 @@ paths:
                         items:
                           $ref: '#/components/schemas/MembreResume'
         '401':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/Unauthorized'
 
     post:
       tags: [ Membres ]
@@ -123,13 +123,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Membre'
         '400':
-          $ref: '#/components/schemas/Error'
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
         '409':
           description: Email déjà utilisé
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/BadRequest'
+                $ref: '#/components/schemas/BadRequestError'
+
+        
 
   /membres/{code}:
     parameters:
@@ -917,43 +923,50 @@ components:
         message:
           type: string
           example: Token manquant ou invalide
-    
+
     UnauthorizedError:
       type: object
       properties:
         code:
           type: integer
-          example: 401
+          example: 403
         message:
           type: string
           example: Accès interdit
-          
+
     NotFoundError:
-        type: object
-        properties:
-          code:
-            type: integer
-            example: 404
-          message:
-            type: string
-            example: Ressource introuvable
-
-    BadRequestError:
-        type: object
-        properties:
-          code:
-            type: integer
-            example: 409
-          message:
-            type: string
-            example: Données invalides
-
-    TokenResponse:
       type: object
       properties:
-        token:
+        code:
+          type: integer
+          example: 404
+        message:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          example: Ressource introuvable
+
+    BadRequestError:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Données invalides
+
+    ConflictError:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 409
+        message:
+          type: string
+          example: Conflit de données
+
+    AuthResponse:
+      type: object
+      properties:
         profil:
           type: string
           enum: [ admin, utilisateur ]
