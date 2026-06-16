@@ -1,10 +1,10 @@
 
-import crypto from 'node:crypto';
 import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { expect } from 'expect';
-import pool from '../../src/config/db.js';
 
-const BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
+import { authService } from '../../src/modules/auth/auth.service';
+
+const BASE_URL = 'http://localhost:3000/api';
 
 const CODE_COLUMNS = ['code_membre', 'code', 'id'];
 const PASSWORD_COLUMNS = ['password', 'mot_de_passe', 'mdp'];
@@ -13,35 +13,6 @@ const PROFIL_COLUMNS = ['profil', 'role'];
 var lastResponse: Response;
 var lastResponseBody: unknown;
 var sessionCookie: string | null = null;
-
-function pickColumn(columns: string[], candidates: string[]): string | null {
-  return candidates.find((candidate) => columns.includes(candidate)) ?? null;
-}
-
-async function getColumns(table: string): Promise<string[]> {
-  const [rows] = (await pool.query(`SHOW COLUMNS FROM \`${table}\``)) as [Array<{ Field: string }>, unknown[]];
-  return rows.map((row) => row.Field);
-}
-
-async function ensureMemberExists(code: string, password: string): Promise<void> {
-  const columns = await getColumns('membres');
-  const codeColumn = pickColumn(columns, CODE_COLUMNS);
-  const passwordColumn = pickColumn(columns, PASSWORD_COLUMNS);
-  const profilColumn = pickColumn(columns, PROFIL_COLUMNS);
-
-  if (!codeColumn || !passwordColumn || !profilColumn) {
-    throw new Error('Unable to seed member: membres table is missing expected auth columns.');
-  }
-
-  const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-  const profile = 'utilisateur';
-
-  await pool.query(`DELETE FROM \`membres\` WHERE \`${codeColumn}\` = ?`, [code]);
-  await pool.query(
-    `INSERT INTO \`membres\` (\`${codeColumn}\`, \`${passwordColumn}\`, \`${profilColumn}\`) VALUES (?, ?, ?)`,
-    [code, hashedPassword, profile],
-  );
-}
 
 function getRequestBodyFromDataTable(dataTable: DataTable): Record<string, unknown> {
   const rows = dataTable.rows();
@@ -86,7 +57,11 @@ async function sendPost(path: string, body?: Record<string, unknown>, useSession
 }
 
 Given('a member exists with code {string} and password {string}', async function (code: string, password: string) {
-  await ensureMemberExists(code, password);
+  await authService.ensureMemberExists({
+    codeMembre: code,
+    password,
+    isAdmin: false,
+  });
 });
 
 When('the client sends a POST request to {string} with:', async function (path: string, dataTable: DataTable) {
@@ -129,7 +104,11 @@ Given('an authenticated member session', async function () {
   const code = '422324';
   const password = 'monMotDePasse!';
 
-  await ensureMemberExists(code, password);
+  await authService.ensureMemberExists({
+    codeMembre: code,
+    password,
+    isAdmin: false,
+  });
   await sendPost('/auth/login', {
     code_membre: code,
     password,

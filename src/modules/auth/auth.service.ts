@@ -68,6 +68,17 @@ class AuthService {
     };
   }
 
+  async ensureMemberExists(input: LoginInput): Promise<void> {
+    const member = await this.repository.findMemberForAuth(input.codeMembre);
+    if (!member) {
+      await this.repository.createMember({
+        code_membre: input.codeMembre,
+        password: this.hashPassword(input.password),
+        profil: input.isAdmin ? 'admin' : 'utilisateur',
+      });
+    }
+  }
+
   validateToken(token: string): AuthSession | null {
     this.cleanupExpiredSessions();
 
