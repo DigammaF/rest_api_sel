@@ -10,3 +10,21 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
+export type MemberProfile = 'admin' | 'utilisateur';
+
+export interface AuthSession {
+  code_membre: string;
+  profil: MemberProfile;
+  token: string;
+  expiresAt: number;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      auth?: AuthSession;
+    }
+  }
+}
+
+export {};
