@@ -40,7 +40,6 @@ class AuthService {
 
   async login(input: LoginInput): Promise<LoginResult> {
     const member = await this.repository.findMemberForAuth(input.codeMembre);
-    console.log("member", member)
     if (!member || !this.matchesPassword(member.password, input.password)) {
       throw new Error('Identifiants invalides.');
     }
