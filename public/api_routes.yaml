@@ -40,9 +40,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [ code_membre, password, isAdmin ]
+              required: [ codeMembre, password, isAdmin ]
               properties:
-                code_membre:
+                codeMembre:
                   type: string
                   example: "422324"
                 password:
@@ -192,7 +192,7 @@ paths:
       - cookieAuth: []
       responses:
         '204':
-          description: Membre supprimé (marqué is_deleted)
+          description: Membre supprimé
         '401':
           $ref: '#/components/responses/Forbidden'
         '404':
