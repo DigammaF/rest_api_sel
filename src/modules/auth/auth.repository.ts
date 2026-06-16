@@ -31,4 +31,16 @@ export class AuthRepository {
       throw error;
     }
   }
+
+  async createMember(input: MemberAuthRow): Promise<void> {
+    try {
+      await pool.query(
+        'INSERT INTO `Membre` (`code`, `password`, `profil`) VALUES (?, ?, ?)',
+        [input.code_membre, input.password, input.profil],
+      );
+    } catch (error) {
+      console.error('Erreur dans createMember:', error);
+      throw error;
+    }
+  }
 }
