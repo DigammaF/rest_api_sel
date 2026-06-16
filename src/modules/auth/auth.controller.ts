@@ -4,18 +4,20 @@ import { authService } from './auth.service';
 export class AuthController {
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { code_membre, password, isAdmin } = req.body as {
-        code_membre?: string;
+      const { codeMembre, password, isAdmin } = req.body as {
+        codeMembre?: string;
         password?: string;
         isAdmin?: boolean;
       };
 
-      if (!code_membre || !password || typeof isAdmin !== 'boolean') {
+
+
+      if (!codeMembre || !password || typeof isAdmin !== 'boolean') {
         res.status(400).json({ code: 400, message: 'Données invalides' });
         return;
       }
 
-      const result = await authService.login({ code_membre, password, isAdmin });
+      const result = await authService.login({ codeMembre, password, isAdmin });
 
       res.cookie('connect.sid', result.token, {
         httpOnly: true,
@@ -25,13 +27,12 @@ export class AuthController {
         maxAge: result.expiresAt - Date.now(),
       });
 
-      const codeMembre = Number(result.code_membre);
-
       res.status(200).json({
         profil: result.profil,
         code_membre: Number.isNaN(codeMembre) ? result.code_membre : codeMembre,
       });
     } catch (error) {
+      console.error('Erreur lors de la connexion:', error);
       res.status(401).json({ code: 401, message: 'Identifiants invalides' });
     }
   }

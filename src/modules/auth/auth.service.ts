@@ -5,7 +5,7 @@ import type { AuthSession, MemberProfile } from '../../types';
 const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
 
 interface LoginInput {
-  code_membre: string;
+  codeMembre: string;
   password: string;
   isAdmin: boolean;
 }
@@ -39,7 +39,8 @@ class AuthService {
   }
 
   async login(input: LoginInput): Promise<LoginResult> {
-    const member = await this.repository.findMemberForAuth(input.code_membre);
+    const member = await this.repository.findMemberForAuth(input.codeMembre);
+    console.log("member", member)
     if (!member || !this.matchesPassword(member.password, input.password)) {
       throw new Error('Identifiants invalides.');
     }

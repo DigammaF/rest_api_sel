@@ -1,6 +1,6 @@
 import express from 'express';
 import routes from './routes';
-import authRoutes from './modules/auth/auth.routes';
+import authRoutes from './modules/auth/auth.routes.ts';
 import { requireAuth } from './middleware/auth.middleware';
 
 const app = express();
