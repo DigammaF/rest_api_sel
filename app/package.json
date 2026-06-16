@@ -1,9 +1,13 @@
 {
-  "name": "Rest API SEL",
+  "name": "app",
   "version": "0.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_OPTIONS='--loader ts-node/esm --no-warnings' cucumber-js --import features/step_definitions/**/*.ts"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24"
   },
   "keywords": [],
   "author": "",
@@ -12,10 +16,13 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^13.0.0",
     "@tsconfig/node22": "^22.0.5",
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.3",
+    "expect": "^30.4.1",
     "prettier": "^3.8.4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
