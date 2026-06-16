@@ -35,12 +35,11 @@ class AuthService {
   }
 
   private matchesPassword(stored: string, provided: string): boolean {
-    return stored === this.hashPassword(provided);
+    return stored === provided || stored === this.hashPassword(provided);
   }
 
   async login(input: LoginInput): Promise<LoginResult> {
     const member = await this.repository.findMemberForAuth(input.code_membre);
-
     if (!member || !this.matchesPassword(member.password, input.password)) {
       throw new Error('Identifiants invalides.');
     }
