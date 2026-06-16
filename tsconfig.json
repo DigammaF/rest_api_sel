@@ -6,7 +6,8 @@
     "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "features/**/*.ts"
   ],
   "exclude": ["dist"]
 }
