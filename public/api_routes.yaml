@@ -40,9 +40,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [ codeMembre, password, isAdmin ]
+              required: [ code_membre, password, isAdmin ]
               properties:
-                codeMembre:
+                code_membre:
                   type: string
                   example: "422324"
                 password:
