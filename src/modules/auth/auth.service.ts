@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { AuthRepository, MemberAuthRow } from './auth.repository';
+import { AuthRepository } from './auth.repository';
 import type { AuthSession, MemberProfile } from '../../types';
 
 const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;

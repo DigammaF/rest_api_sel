@@ -11,8 +11,6 @@ export interface MemberAuthRow {
 export class AuthRepository {
   async findMemberForAuth(codeMembre: string | number): Promise<MemberAuthRow | null> {
     try {
-      console.log('findMemberForAuth', codeMembre);
-
       const [rows] = (await pool.query(
           'SELECT * FROM `Membre` WHERE `code` = ? LIMIT 1',
           [codeMembre],
