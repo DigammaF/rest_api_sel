@@ -280,7 +280,7 @@ export class PropositionsRepository {
 		}
 
 		params.push(id);
-		const [result] = await pool.query(`UPDATE \\`Proposition\\` SET ${fields.join(', ')} WHERE \\`id\\` = ?`, params);
+		const [result] = await pool.query('UPDATE `Proposition` SET ' + fields.join(', ') + ' WHERE `id` = ?', params);
 		if (!(result as QueryResult).affectedRows) {
 			return null;
 		}

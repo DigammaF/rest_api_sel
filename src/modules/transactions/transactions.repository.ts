@@ -198,7 +198,7 @@ export class TransactionsRepository {
 
 	async count(filters: TransactionFilters): Promise<number> {
 		const { where, params } = this.buildFilters(filters);
-		const [rows] = await pool.query(`SELECT COUNT(*) AS total ${this.baseFrom()} ${where}`, params);
+		const [rows] = await pool.query('SELECT COUNT(*) AS total ' + this.baseFrom() + ' ' + where, params);
 		return Number((rows as Array<{ total: number }>)[0]?.total ?? 0);
 	}
 
@@ -209,45 +209,10 @@ export class TransactionsRepository {
 		const offset = (page - 1) * limit;
 
 		const [rows] = await pool.query(
-			`
-			SELECT
-				t.`id` AS transaction_id,
-				ac.`id` AS acteur_id,
-				ac.`membre` AS acteur_membre,
-				ac.`description` AS acteur_description,
-				acp.`id` AS acteur_competence_id,
-				acp.`description` AS acteur_competence_description,
-				acp.`id_categorie` AS acteur_id_categorie,
-				acc.`id` AS acteur_categorie_id,
-				acc.`description` AS acteur_categorie_description,
-				b.`code` AS beneficiaire_code,
-				b.`nom` AS beneficiaire_nom,
-				b.`prenom` AS beneficiaire_prenom,
-				b.`status` AS beneficiaire_status,
-				b.`solde_heure` AS beneficiaire_solde,
-				p.`id` AS proposition_id,
-				p.`date_debut` AS proposition_date_debut,
-				p.`date_fin` AS proposition_date_fin,
-				p.`description` AS proposition_description,
-				p.`tarif` AS proposition_tarif,
-				pmc.`id` AS proposition_mc_id,
-				pmc.`membre` AS proposition_mc_membre,
-				pmc.`description` AS proposition_mc_description,
-				pcp.`id` AS proposition_competence_id,
-				pcp.`description` AS proposition_competence_description,
-				pcp.`id_categorie` AS proposition_id_categorie,
-				pc.`id` AS proposition_categorie_id,
-				pc.`description` AS proposition_categorie_description,
-				t.`nb_heures`,
-				t.`duree_theorique`,
-				t.`etat`,
-				t.`date_prevu`,
-				t.`date_real`
-			${this.baseFrom()}
-			${where}
-			ORDER BY t.`id` ASC
-			LIMIT ? OFFSET ?
-			`,
+			'SELECT t.`id` AS transaction_id, ac.`id` AS acteur_id, ac.`membre` AS acteur_membre, ac.`description` AS acteur_description, acp.`id` AS acteur_competence_id, acp.`description` AS acteur_competence_description, acp.`id_categorie` AS acteur_id_categorie, acc.`id` AS acteur_categorie_id, acc.`description` AS acteur_categorie_description, b.`code` AS beneficiaire_code, b.`nom` AS beneficiaire_nom, b.`prenom` AS beneficiaire_prenom, b.`status` AS beneficiaire_status, b.`solde_heure` AS beneficiaire_solde, p.`id` AS proposition_id, p.`date_debut` AS proposition_date_debut, p.`date_fin` AS proposition_date_fin, p.`description` AS proposition_description, p.`tarif` AS proposition_tarif, pmc.`id` AS proposition_mc_id, pmc.`membre` AS proposition_mc_membre, pmc.`description` AS proposition_mc_description, pcp.`id` AS proposition_competence_id, pcp.`description` AS proposition_competence_description, pcp.`id_categorie` AS proposition_id_categorie, pc.`id` AS proposition_categorie_id, pc.`description` AS proposition_categorie_description, t.`nb_heures`, t.`duree_theorique`, t.`etat`, t.`date_prevu`, t.`date_real` ' +
+			this.baseFrom() + ' ' +
+			where + ' ' +
+			'ORDER BY t.`id` ASC LIMIT ? OFFSET ?',
 			[...params, limit, offset],
 		);
 
@@ -256,44 +221,9 @@ export class TransactionsRepository {
 
 	async findById(id: number): Promise<Transaction | null> {
 		const [rows] = await pool.query(
-			`
-			SELECT
-				t.`id` AS transaction_id,
-				ac.`id` AS acteur_id,
-				ac.`membre` AS acteur_membre,
-				ac.`description` AS acteur_description,
-				acp.`id` AS acteur_competence_id,
-				acp.`description` AS acteur_competence_description,
-				acp.`id_categorie` AS acteur_id_categorie,
-				acc.`id` AS acteur_categorie_id,
-				acc.`description` AS acteur_categorie_description,
-				b.`code` AS beneficiaire_code,
-				b.`nom` AS beneficiaire_nom,
-				b.`prenom` AS beneficiaire_prenom,
-				b.`status` AS beneficiaire_status,
-				b.`solde_heure` AS beneficiaire_solde,
-				p.`id` AS proposition_id,
-				p.`date_debut` AS proposition_date_debut,
-				p.`date_fin` AS proposition_date_fin,
-				p.`description` AS proposition_description,
-				p.`tarif` AS proposition_tarif,
-				pmc.`id` AS proposition_mc_id,
-				pmc.`membre` AS proposition_mc_membre,
-				pmc.`description` AS proposition_mc_description,
-				pcp.`id` AS proposition_competence_id,
-				pcp.`description` AS proposition_competence_description,
-				pcp.`id_categorie` AS proposition_id_categorie,
-				pc.`id` AS proposition_categorie_id,
-				pc.`description` AS proposition_categorie_description,
-				t.`nb_heures`,
-				t.`duree_theorique`,
-				t.`etat`,
-				t.`date_prevu`,
-				t.`date_real`
-			${this.baseFrom()}
-			WHERE t.`id` = ?
-			LIMIT 1
-			`,
+			'SELECT t.`id` AS transaction_id, ac.`id` AS acteur_id, ac.`membre` AS acteur_membre, ac.`description` AS acteur_description, acp.`id` AS acteur_competence_id, acp.`description` AS acteur_competence_description, acp.`id_categorie` AS acteur_id_categorie, acc.`id` AS acteur_categorie_id, acc.`description` AS acteur_categorie_description, b.`code` AS beneficiaire_code, b.`nom` AS beneficiaire_nom, b.`prenom` AS beneficiaire_prenom, b.`status` AS beneficiaire_status, b.`solde_heure` AS beneficiaire_solde, p.`id` AS proposition_id, p.`date_debut` AS proposition_date_debut, p.`date_fin` AS proposition_date_fin, p.`description` AS proposition_description, p.`tarif` AS proposition_tarif, pmc.`id` AS proposition_mc_id, pmc.`membre` AS proposition_mc_membre, pmc.`description` AS proposition_mc_description, pcp.`id` AS proposition_competence_id, pcp.`description` AS proposition_competence_description, pcp.`id_categorie` AS proposition_id_categorie, pc.`id` AS proposition_categorie_id, pc.`description` AS proposition_categorie_description, t.`nb_heures`, t.`duree_theorique`, t.`etat`, t.`date_prevu`, t.`date_real` ' +
+			this.baseFrom() + ' ' +
+			'WHERE t.`id` = ? LIMIT 1',
 			[id],
 		);
 
@@ -334,28 +264,7 @@ export class TransactionsRepository {
 
 	async findPropositionById(id: number): Promise<Proposition | null> {
 		const [rows] = await pool.query(
-			`
-			SELECT
-				p.`id` AS proposition_id,
-				p.`date_debut`,
-				p.`date_fin`,
-				p.`description`,
-				p.`tarif`,
-				pmc.`id` AS membre_competence_id,
-				pmc.`membre`,
-				pmc.`description` AS mc_description,
-				pcp.`id` AS competence_id,
-				pcp.`description` AS competence_description,
-				pcp.`id_categorie`,
-				pc.`id` AS categorie_id,
-				pc.`description` AS categorie_description
-			FROM `Proposition` p
-			INNER JOIN `membre_competence` pmc ON pmc.`id` = p.`membre_competence`
-			INNER JOIN `Competence` pcp ON pcp.`id` = pmc.`competence`
-			INNER JOIN `Categorie` pc ON pc.`id` = pcp.`id_categorie`
-			WHERE p.`id` = ?
-			LIMIT 1
-			`,
+			'SELECT p.`id` AS proposition_id, p.`date_debut`, p.`date_fin`, p.`description`, p.`tarif`, pmc.`id` AS membre_competence_id, pmc.`membre`, pmc.`description` AS mc_description, pcp.`id` AS competence_id, pcp.`description` AS competence_description, pcp.`id_categorie`, pc.`id` AS categorie_id, pc.`description` AS categorie_description FROM `Proposition` p INNER JOIN `membre_competence` pmc ON pmc.`id` = p.`membre_competence` INNER JOIN `Competence` pcp ON pcp.`id` = pmc.`competence` INNER JOIN `Categorie` pc ON pc.`id` = pcp.`id_categorie` WHERE p.`id` = ? LIMIT 1',
 			[id],
 		);
 
@@ -449,7 +358,7 @@ export class TransactionsRepository {
 		}
 
 		params.push(id);
-		const [result] = await pool.query(`UPDATE ` + '`Transaction`' + ` SET ${fields.join(', ')} WHERE \\`id\\` = ?`, params);
+		const [result] = await pool.query('UPDATE `Transaction` SET ' + fields.join(', ') + ' WHERE `id` = ?', params);
 		if (!(result as QueryResult).affectedRows) {
 			return null;
 		}
