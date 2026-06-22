@@ -8,5 +8,6 @@ app.listen(PORT, () => {
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🔗 API Routes: http://localhost:${PORT}/api`);
   console.log(`💚 Health Check: http://localhost:${PORT}/health`);
+  console.log(`📚 Swagger UI:   http://localhost:${PORT}/api-docs`);
   console.log(`\n✓ Ready to accept requests\n`);
 });
